@@ -45,11 +45,10 @@ class AuthenticatedSessionController extends Controller
         }
         
         $service =  $response->json();
-        // return $response['data'];
         $user = User::updateOrcreate([
             'email' => $request->email
         ],$service['data']);
-
+        // Validar si el usuario que inicia sesión ya tiene un token asignado
         if(!$user->accessToken){
             $response = Http::withHeaders([
                 'Accept' => 'application/json'
@@ -72,10 +71,6 @@ class AuthenticatedSessionController extends Controller
         }
         Auth::login($user, $request->remember);
         return redirect()->intended(RouteServiceProvider::HOME);
-        // $request->authenticate();
-
-        // $request->session()->regenerate();
-
     }
 
     /**
