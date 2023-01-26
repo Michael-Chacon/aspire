@@ -39,20 +39,43 @@ class AuthenticatedSessionController extends Controller
             'email' => $request->email,
             'password' => $request->password
         ]);
+
+        if($response->status() == 404){
+            return back()->withErrors('These credentials do not match our records.');
+        }
         
-        $response =  $response->json();
+        $service =  $response->json();
         // return $response['data'];
         $user = User::updateOrcreate([
             'email' => $request->email
-        ],$response['data']);
+        ],$service['data']);
 
-        return $user;
+        if(!$user->accessToken){
+            $response = Http::withHeaders([
+                'Accept' => 'application/json'
+            ])->post('http://api.blog.test/oauth/token', [
+                'grant_type' => 'password',
+                'client_id' => '984f8d3e-125c-4d39-8623-b949d132da94', 
+                'client_secret' => 'NQHCfV59dWhCcnbkOn1IRVJypxlRphJmeONPG8Vb',
+                'username' => $request->email,
+                'password' => $request->password
+            ]);
 
+            $access_token = $response->json();
+            
+            $user->accessToken()->create([
+                'service_id' => $service['data']['id'],
+                'access_token' => $access_token['access_token'],
+                'refresh_token' => $access_token['refresh_token'],
+                'expires_at' => now()->addSecond($access_token['expires_in'])
+            ]);
+        }
+        Auth::login($user, $request->remember);
+        return redirect()->intended(RouteServiceProvider::HOME);
         // $request->authenticate();
 
         // $request->session()->regenerate();
 
-        // return redirect()->intended(RouteServiceProvider::HOME);
     }
 
     /**

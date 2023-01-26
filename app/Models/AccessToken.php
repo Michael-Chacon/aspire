@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class AccessToken extends Model
 {
-    protected $fillabel = [
+    protected $fillable = [
         'user_id',
         'service_id',
         'access_token',
