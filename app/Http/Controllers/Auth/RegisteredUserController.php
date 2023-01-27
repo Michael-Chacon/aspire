@@ -13,9 +13,12 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
+use App\Traits\Token;
 
 class RegisteredUserController extends Controller
 {
+
+    use Token;
     /**
      * Display the registration view.
      */
@@ -23,7 +26,7 @@ class RegisteredUserController extends Controller
     {
         return view('auth.register');
     }
-
+    
     /**
      * Handle an incoming registration request.
      *
@@ -36,46 +39,29 @@ class RegisteredUserController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', 'min:6', 'string'],
         ]);
-         
-        $response = Http::withHeaders([
-            'Accept' => 'application/json'
-         ])->post('http://api.blog.test/v1/register', [
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => $request->password, 
-            'password_confirmation' => $request->password_confirmation
-         ]);
-
-         if($response->status() === 422){
-            return back()->withErrors($response->json()['errors']);
-         }
         
-         $service = $response->json();
-         
-         $user = User::create([
-             'name' => $request->name,
-             'email' => $request->email,
-         ]);
-
         $response = Http::withHeaders([
             'Accept' => 'application/json'
-        ])->post('http://api.blog.test/oauth/token', [
-            'grant_type' => 'password',
-            'client_id' => '984f8d3e-125c-4d39-8623-b949d132da94', 
-            'client_secret' => 'NQHCfV59dWhCcnbkOn1IRVJypxlRphJmeONPG8Vb',
-            'username' => $request->email,
-            'password' => $request->password
-        ]);
+            ])->post('http://api.blog.test/v1/register', [
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => $request->password, 
+                'password_confirmation' => $request->password_confirmation
+            ]);
+            
+            if($response->status() === 422){
+                return back()->withErrors($response->json()['errors']);
+            }
+            
+            $service = $response->json();
+            
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+            ]);
 
-        $access_token = $response->json();
-
-        $user->accessToken()->create([
-            'service_id' => $service['data']['id'],
-            'access_token' => $access_token['access_token'],
-            'refresh_token' => $access_token['refresh_token'],
-            'expires_at' => now()->addSecond($access_token['expires_in'])
-        ]);
-
+        
+            $this->getAccessToken($user, $service);
 
         event(new Registered($user));
 
