@@ -35,7 +35,8 @@ class PostController extends Controller
      */
     public function store(Request $request)
     {
-        
+        $this->resolverAuthorization();
+        // ------------------------------------------------------------------------------
         $response = Http::withHeaders([
             'Accept' => 'application/json',
             'Authorization' => 'Bearer ' . auth()->user()->accessToken->access_token
@@ -48,7 +49,6 @@ class PostController extends Controller
             'category_id' => 1, 
             'user_id' => auth()->user()->id
         ]);
-
         return $response->json();
     }
 
