@@ -48,7 +48,7 @@ class AuthenticatedSessionController extends Controller
         $user = User::updateOrcreate([
             'email' => $request->email
         ],$service['data']);
-        // Validar si el usuario que inicia sesión ya tiene un token asignado
+        
         if(!$user->accessToken){
             $response = Http::withHeaders([
                 'Accept' => 'application/json'
